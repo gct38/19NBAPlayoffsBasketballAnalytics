@@ -16,14 +16,33 @@ class EventCodes:
 #TODO:how to globally access the end all be all for players and their off/def rtg??????
 #  maybe have a func that will return list of all players as a Player object??
 #TODO: implement __getitem__ method override to allow for indexing of something, will figure out what later
+#game is going to be a list of every game
+#   each game consists of [game_id, period, person_id, team_id, status]
 class Game:
+    def __init__(self, game):
+        gameId = str(game[0]).strip()
+        self.gameId = gameId
+        for item in game:
+            period = int(item[1].strip())
+            personId = str(item[2]).strip()
+            teamId = str(item[3]).strip()
+            status = str(item[4]).strip().upper()
+
+
+
+        self.gameId = str(game[0]).strip()
+        self.teams = dict()
+
+        self.startingLineup = StartingLineup(game)
+
+    '''
     def __init__(self, game):
         self.gameId = str(game[0]).strip()
         self.teams = dict()
         period = int(game[1].strip())
         personId = str(game[2]).strip()
         teamId = str(game[3]).strip()
-        status = str(game[4]).strip()
+        status = str(game[4]).strip().upper()
         if status == "I" and period == 0: #TODO: double check criteria for being inactive for entire game
             self.teams[teamId] = [Player(personId, self.gameId)]
             # FIXME: the above code is temp until figure out what to do ^^
@@ -39,13 +58,69 @@ class Game:
         period = int(line[1].strip())
         personId = str(line[2]).strip()
         teamId = str(line[3]).strip()
-        status = str(line[4]).strip()
+        status = str(line[4]).strip().upper()
         self.teams[teamId].append(Player(personId, self.gameId))
         #if period not in startingLineups
         self.startingLineups.append([period, teamId, personId, status])
+    '''
+
+class StartingLineup:
+    #properties:
+    '''
+    self.team1 = []
+    self.team2 = []
+    self.lineup = dict()
+    self.lineup[period] = dict()
+    self.lineup[period][team1name] = self.team1
+    self.lineup[period][team2name] = self.team2
+    '''
+    #game is a list of [game_id, period, person_id, team_id, status] for the entire game
+    def __init__(self, game):
+        self.teams = [] #contains both team's ids
+        self.lineup = dict()
+        self.inactives = []
+
+        for item in game:
+            period = int(item[1])
+            person = str(item[2]).strip()
+            team = str(item[3]).strip()
+            status = str(item[4]).strip().upper()
+
+            if period not in self.lineup:
+                self.lineup[period] = dict()
+            else:
+                if team not in self.teams:
+                    self.teams.append(team)
+                    self.lineup[period][team] = dict()
+                else:
+                    if status not in self.lineup[period][team]:
+                        self.lineup[period][team][status] = [person]
+                    else:
+                        if period == 4 and status == "I":
+                            if person in self.lineup[1][team]["I"] and person in self.lineup[2][team]["I"] and person in self.lineup[3][team]["I"]:
+                                #player is now inactive for all 4 periods
+                                self.lineup[1][team]["I"].remove(person)
+                                self.lineup[2][team]["I"].remove(person)
+                                self.lineup[3][team]["I"].remove(person)
+                        else:
+                            self.lineup[period][team][status].append(person)
+
+            if team not in self.teams:
+                self.teams.append(team)
+
+            #self.lineup = dict()
+            #self.lineup[period] = dict()
+            #self.lineup[period][team] = dict()
+            #self.lineup[period][team][status] = [person]
 
 
 
+
+
+
+###################################################################################################################################
+###################################################################################################################################
+###################################################################################################################################
 
 #TODO: test to ensure this class is working properly
 class Player:
