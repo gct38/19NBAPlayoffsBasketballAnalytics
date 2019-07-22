@@ -1,8 +1,5 @@
 import csv
 
-#TODO: create some type of data structure that'll hold the game_lineup data,
-# just create a parsing func that will return some type of data structure
-
 #class to help better organize all Event Codes
 class EventCodes:
     def __init__(self, EventCodesLine):
@@ -12,27 +9,21 @@ class EventCodes:
         self.actionType[int(EventCodesLine[1].strip())] = str(EventCodesLine[3]).strip()
 
 
+###################################################################################################################################
+###################################################################################################################################
+###################################################################################################################################
 #teams is a dict(), keys rep which team; values rep list of players for that team
-#TODO:how to globally access the end all be all for players and their off/def rtg??????
-#  maybe have a func that will return list of all players as a Player object??
-#TODO: implement __getitem__ method override to allow for indexing of something, will figure out what later
 #game is going to be a list of every game
 #   each game consists of [game_id, period, person_id, team_id, status]
 class Game:
     def __init__(self, game):
-        gameId = str(game[0]).strip()
+        gameId = str(game[0][0]).strip()
         self.gameId = gameId
+        self.teams = []
         for item in game:
-            period = int(item[1].strip())
-            personId = str(item[2]).strip()
             teamId = str(item[3]).strip()
-            status = str(item[4]).strip().upper()
-
-
-
-        self.gameId = str(game[0]).strip()
-        self.teams = dict()
-
+            if teamId not in self.teams:
+                self.teams.append(teamId)
         self.startingLineup = StartingLineup(game)
 
     '''
@@ -67,21 +58,18 @@ class Game:
 class StartingLineup:
     #properties:
     '''
-    self.team1 = []
-    self.team2 = []
-    self.lineup = dict()
+    self.lineup = []
     self.lineup[period] = dict()
-    self.lineup[period][team1name] = self.team1
-    self.lineup[period][team2name] = self.team2
+    self.lineup[period][team1name] = team1 players
+    self.lineup[period][team2name] = team2 players
     '''
     #game is a list of [game_id, period, person_id, team_id, status] for the entire game
     def __init__(self, game):
-        self.teams = [] #contains both team's ids
         self.lineup = dict()
         self.inactives = []
 
         for item in game:
-            period = int(item[1])
+            period = int(item[1].strip())
             person = str(item[2]).strip()
             team = str(item[3]).strip()
             status = str(item[4]).strip().upper()
@@ -89,33 +77,22 @@ class StartingLineup:
             if period not in self.lineup:
                 self.lineup[period] = dict()
             else:
-                if team not in self.teams:
-                    self.teams.append(team)
+                if team not in self.lineup[period]:
                     self.lineup[period][team] = dict()
                 else:
                     if status not in self.lineup[period][team]:
                         self.lineup[period][team][status] = [person]
                     else:
                         if period == 4 and status == "I":
-                            if person in self.lineup[1][team]["I"] and person in self.lineup[2][team]["I"] and person in self.lineup[3][team]["I"]:
+                            if person in self.lineup[0][team]["I"] and person in self.lineup[1][team]["I"] and person in self.lineup[2][team]["I"] and person in self.lineup[3][team]["I"]:
                                 #player is now inactive for all 4 periods
+                                self.lineup[0][team]["I"].remove(person)
                                 self.lineup[1][team]["I"].remove(person)
                                 self.lineup[2][team]["I"].remove(person)
                                 self.lineup[3][team]["I"].remove(person)
+                                self.inactives.append(person)
                         else:
                             self.lineup[period][team][status].append(person)
-
-            if team not in self.teams:
-                self.teams.append(team)
-
-            #self.lineup = dict()
-            #self.lineup[period] = dict()
-            #self.lineup[period][team] = dict()
-            #self.lineup[period][team][status] = [person]
-
-
-
-
 
 
 ###################################################################################################################################
@@ -155,6 +132,23 @@ def searchEventCodes(eventCodes, eventMsg, actionType):
             continue
     return None
 
+def parseGameLineup(filename):
+    game = list()
+    filename = open(filename, encoding = "ISO-8859-1")
+    filename.readline()
+    gameId = ""
+    aGame = []
+    for line in filename:
+        line = line.replace("\"","").strip().split('\t')
+        if gameId == "":
+            gameId = line[0].strip()
+        elif gameId != line[0].strip():
+            game.append(Game(aGame))
+            gameId = line[0].strip()
+            aGame = []
+        else:
+            aGame.append(line)
+    return game
 
 
 
@@ -167,5 +161,16 @@ if __name__ == "__main__":
         print(event.actionType)
     else:
         print("could not find")
+
+        #testing Game and StartingLineup class objects
+    games = parseGameLineup("Game_Lineup.txt")
+    print(len(games))
+    print(games[0].gameId)
+    print(games[0].teams)
+    for period in games[0].startingLineup.lineup:
+        print(games[0].startingLineup.lineup[period])
+        print()
+
+
 
 
