@@ -69,11 +69,6 @@ class Game:
                     for player in self.startingLineup.lineup[period][team][status]:
                         if player not in players:
                             players[player] = Player(player, self.gameId)
-        '''
-        for player in self.startingLineup.inactives:
-            if player in players:
-                del players[player]
-        '''
         return players
 
 
@@ -90,8 +85,6 @@ class StartingLineup:
     #game is a list of [game_id, period, person_id, team_id, status] for the entire game
     def __init__(self, game):
         self.lineup = dict()
-        #self.inactives = []
-
         for item in game:
             period = int(item[1].strip())
             person = str(item[2]).strip()
@@ -111,18 +104,6 @@ class StartingLineup:
                         self.lineup[period][team][status] = [person]
                     else:
                         self.lineup[period][team][status].append(person)
-                        '''
-                        if period == 4 and status == "I":
-                            if person in self.lineup[0][team]["I"] and person in self.lineup[1][team]["I"] and person in self.lineup[2][team]["I"] and person in self.lineup[3][team]["I"]:
-                                #player is now inactive for all 4 periods
-                                self.lineup[0][team]["I"].remove(person)
-                                self.lineup[1][team]["I"].remove(person)
-                                self.lineup[2][team]["I"].remove(person)
-                                self.lineup[3][team]["I"].remove(person)
-                                self.inactives.append(person)
-                        else:
-                            self.lineup[period][team][status].append(person)
-                        '''
 
 
 ###################################################################################################################################
