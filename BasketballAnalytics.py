@@ -36,6 +36,17 @@ class EventCodes:
         self.actionType = dict()
         self.actionType[int(EventCodesLine[1].strip())] = str(EventCodesLine[3]).strip()
 
+    def print(self):
+        print(self.__str__())
+
+    def __str__(self):
+        message = ""
+        for key in self.eventMsg:
+            message += "Event Message: " + self.eventMsg[key] + ","
+        for key in self.actionType:
+            message += " Action Type: " + self.actionType[key]
+        return message
+
 
 ###################################################################################################################################
 ###################################################################################################################################
@@ -60,6 +71,8 @@ class Game:
                 self.teams.append(teamId)
         self.startingLineup = StartingLineup(game)
         self.players = self.populatePlayers()
+        self.currentLineup = self.populateLineup()
+        self.playbyplay = None
 
     def populatePlayers(self):
         players = dict()
@@ -68,9 +81,17 @@ class Game:
                 for status in self.startingLineup.lineup[period][team]:
                     for player in self.startingLineup.lineup[period][team][status]:
                         if player not in players:
-                            players[player] = Player(player, self.gameId)
+                            players[player] = Player(player)
         return players
 
+    def populateLineup(self):
+        lineup = dict()
+        for team in self.startingLineup.lineup[1]:
+            lineup[team] = self.startingLineup.lineup[1][team]["A"]
+        return lineup
+
+    def populatePlays(self, plays):
+        self.playbyplay = PlayByPlay(plays)
 
 
 class StartingLineup:
@@ -105,6 +126,17 @@ class StartingLineup:
                     else:
                         self.lineup[period][team][status].append(person)
 
+#plays is list of every play in a game (2D list)
+#[game_id, event_num, event_msg_type, period, WC_time, PC_Time, Action_Type, Option1, Option2, Option3,
+#              Team_id, Person1, Person2, Person3, Team_id_type, Person1_type, Person2_type, Person3_type]
+#   Don't need game_id (0),Team_id(10), Team_id_type(14), Person1_type(15), Person2_type(16), Person3_type(17)
+# TODO: finish PlayByPlay class __init__ method
+class PlayByPlay:
+    def __init__(self, plays):
+        self.play = 0
+
+
+
 
 ###################################################################################################################################
 ###################################################################################################################################
@@ -117,13 +149,18 @@ class StartingLineup:
     offRtg = off rating for the game
     possessions = # possessions player was active for in the game,
 '''
-# TODO: make sure that i don't need to split into off possessions and def possessions
 class Player:
-    def __init__(self, playerId, gameId):
+    def __init__(self, playerId):
         self.playerId = str(playerId).strip()
         self.defRtg = 0
         self.offRtg = 0
         self.possessions = 0
+        self.pointsAllowed = 0
+        self.pointsScored = 0
+
+    def calculateRtg(self):
+        self.offRtg = self.pointsScored/self.possessions
+        self.defRtg = self.pointsAllowed/self.possessions
 
 
 
@@ -150,7 +187,7 @@ def searchEventCodes(eventCodes, eventMsg, actionType):
     return None
 
 def parseGameLineup(filename):
-    game = list()
+    game = dict()
     filename = open(filename, encoding = "ISO-8859-1")
     filename.readline()
     gameId = ""
@@ -161,12 +198,13 @@ def parseGameLineup(filename):
             gameId = line[0].strip()
             aGame.append(line)
         elif gameId != line[0].strip():
-            game.append(Game(aGame))
+            game[gameId] = Game(aGame)
             gameId = line[0].strip()
             aGame = [line]
         else:
             aGame.append(line)
     return game
+
 
 
 
@@ -176,8 +214,10 @@ if __name__ == "__main__":
     ##testing area
         #testing EventCodes class object
     eventCodes = parseEventCodes("Event_Codes.txt")
-    event = searchEventCodes(eventCodes, 15,32)
+    event = searchEventCodes(eventCodes, 12,0)
     if event != None:
+        event.print()
+        print(event)
         print(event.eventMsg)
         print(event.actionType)
     else:
@@ -187,23 +227,50 @@ if __name__ == "__main__":
     games = parseGameLineup("Game_Lineup.txt")
 
     print(len(games))
-    print(games[0].gameId)
-    print(games[0].teams)
-    print(len(games[0].players))
+    print(games["006728e4c10e957011e1f24878e6054a"].gameId)
+    print(games["006728e4c10e957011e1f24878e6054a"].teams)
+    print(len(games["006728e4c10e957011e1f24878e6054a"].players))
 
-    '''
+
     counter = 0
-    for team in games[0].startingLineup.lineup[0]:
-        for status in games[0].startingLineup.lineup[0][team]:
-            for person in games[0].startingLineup.lineup[0][team][status]:
+    for team in games["006728e4c10e957011e1f24878e6054a"].startingLineup.lineup[0]:
+        for status in games["006728e4c10e957011e1f24878e6054a"].startingLineup.lineup[0][team]:
+            for person in games["006728e4c10e957011e1f24878e6054a"].startingLineup.lineup[0][team][status]:
                 print(person)
                 counter += 1
 
     print(counter)
-    
-    for player in games[0].players:
-        print(player, games[0].players[player].playerId)
+
+    print(games["006728e4c10e957011e1f24878e6054a"].playbyplay)
+    for team in games["006728e4c10e957011e1f24878e6054a"].currentLineup:
+        print(team)
+        print(games["006728e4c10e957011e1f24878e6054a"].currentLineup[team])
+
     '''
+    for player in games["006728e4c10e957011e1f24878e6054a"].players:
+        print(player, games["006728e4c10e957011e1f24878e6054a"].players[player].playerId)
+    '''
+
+
+    ##parsing play_by_play.txt file
+    #[game_id, event_num, event_msg_type, period, WC_time, PC_Time, Action_Type, Option1, Option2, Option3,
+#              Team_id, Person1, Person2, Person3, Team_id_type, Person1_type, Person2_type, Person3_type]
+    #   Don't need game_id (0),Team_id(10), Team_id_type(14), Person1_type(15), Person2_type(16), Person3_type(17)
+    playbyplay = open("Play_by_Play.txt", encoding = "ISO-8859-1")
+    playbyplay.readline()
+    gameId = ""
+    aGame = []
+    for line in playbyplay:
+        line = line.replace("\"","").strip().split('\t')
+        if gameId == "":
+            gameId = line[0].strip()
+            aGame.append(line[1:10] + line[11:14])
+        elif gameId != line[0].strip():
+            games[gameId].populatePlays(aGame)
+            gameId = line[0].strip()
+            aGame = [line[1:10] + line[11:14]]
+        else:
+            aGame.append(line[1:10] + line[11:14])
 
 
 
