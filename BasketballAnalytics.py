@@ -1,7 +1,7 @@
 from parsers import parseEventCodes as parseEventCodes
 from parsers import parseGameLineup as parseGameLineup
 from parsers import parsePlayByPlay as parsePlayByPlay
-from EventCodes import EventCodes
+from EventCodes import searchEventCodes as searchEventCodes
 import csv
 
 
@@ -26,21 +26,7 @@ import csv
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-
-#search function that returns an EventCodes object
-def searchEventCodes(eventCodes, eventMsg, actionType):
-    eventMsg = int(eventMsg)
-    actionType = int(actionType)
-    for event in eventCodes:
-        if eventMsg in event.eventMsg and actionType in event.actionType:
-            return event
-        else:
-            continue
-    return None
-
 if __name__ == "__main__":
-
-
     ##testing area
         #testing EventCodes class object
     eventCodes = parseEventCodes("Event_Codes.txt")
@@ -59,7 +45,7 @@ if __name__ == "__main__":
     games = parseGameLineup("Game_Lineup.txt")
     parsePlayByPlay("Play_by_Play.txt", games)
 
-
+    #TODO: Game.players property; what is Option3?
     print(len(games))
     print(games["006728e4c10e957011e1f24878e6054a"].gameId)
     print(games["006728e4c10e957011e1f24878e6054a"].teams)

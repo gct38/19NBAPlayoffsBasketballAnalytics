@@ -16,3 +16,15 @@ class EventCodes:
         for key in self.actionType:
             message += " Action Type: " + self.actionType[key]
         return message
+
+
+#search function that returns an EventCodes object
+def searchEventCodes(eventCodes, eventMsg, actionType):
+    eventMsg = int(eventMsg)
+    actionType = int(actionType)
+    for event in eventCodes:
+        if eventMsg in event.eventMsg and actionType in event.actionType:
+            return event
+        else:
+            continue
+    return None
