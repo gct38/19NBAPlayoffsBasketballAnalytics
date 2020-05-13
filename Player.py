@@ -1,15 +1,16 @@
 '''
     Properties:
     playerId = player's ID (string)
-    defRtg = def rating for the game
-    offRtg = off rating for the game
+    defRtg = def rating for the season
+    offRtg = off rating for the season
     possessions = # possessions player was active for in the game
     pointsScored = pts team scores with player on floor
     pointsAllowed = pts team allows with player on floor
 '''
 class Player:
-    def __init__(self, playerId):
+    def __init__(self, playerId, teamId):
         self.playerId = str(playerId).strip()
+        self.teamId = str(teamId).strip()
         self.defRtg = 0
         self.offRtg = 0
         self.possessions = 0

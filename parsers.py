@@ -46,8 +46,9 @@ def parsePlayByPlay(filename, games):
         if gameId == "":
             gameId = line[0].replace("\"","").strip()
             aGame.append(line[1:10] + line[11:14])
-        elif gameId != line[0].strip():
+        elif gameId != line[0].replace("\"","").strip():
             games[gameId].populatePlays(aGame)
+            #print('Game ID:', gameId, 'curr GameID:', line[0].replace("\"","").strip(), 'bool', gameId != line[0].replace("\"","").strip(), 'aGame:', aGame) TODO: delete test line
             gameId = line[0].replace("\"","").strip()
             aGame = [line[1:10] + line[11:14]]
         else:

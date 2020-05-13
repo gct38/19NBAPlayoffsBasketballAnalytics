@@ -10,6 +10,7 @@ import csv
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ##  Notes:
 #Use # of possessions to see if user is actually active in that game???
+#       because you can rack up DNP-Coach's Decisions
 
 #END OF POSSESSION REQUIREMENTS
 '''
@@ -63,7 +64,11 @@ if __name__ == "__main__":
     print(games["006728e4c10e957011e1f24878e6054a"].gameId)
     print(games["006728e4c10e957011e1f24878e6054a"].teams)
     print(len(games["006728e4c10e957011e1f24878e6054a"].players))
-
+    curr_game = games["006728e4c10e957011e1f24878e6054a"]
+    curr_game.ratings()
+    players = curr_game.players
+    print(curr_game.players)
+    #print(curr_game.players['0370a0d090da0d0edc6319f120187e0e'])
     '''
     counter = 0
     for team in games["006728e4c10e957011e1f24878e6054a"].startingLineup.lineup[0]:
