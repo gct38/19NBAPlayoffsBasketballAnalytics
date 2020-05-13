@@ -244,7 +244,7 @@
 6	27	"Foul                                    "	"Personal Block"
 6	28	"Foul                                    "	"Personal Take"
 6	29	"Foul                                    "	"Shooting Block"
-6	30	"Foul                                    "	"Too Many Players Technical"
+6	30	"Foul                                    "	"Too Many n bPlayers Technical"
 7	0	"Violation                               "	"No Violation"
 7	1	"Violation                               "	"Delay Of Game"
 7	2	"Violation                               "	"Defensive Goaltending"
