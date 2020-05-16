@@ -1,6 +1,8 @@
 from operator import itemgetter
 from Player import Player
 from StartingLineup import StartingLineup
+from EventCodes import parseEventCodes
+from EventCodes import searchEventCodes
 
 #game is going to be a list of every game
 #   each game consists of [game_id, period, person_id, team_id, status]
@@ -54,7 +56,6 @@ class Game:
     #populates play property with all the plays in a game
     def populatePlays(self, plays):
         self.play = []
-        #print('Plays:', len(plays), self.gameId) TODO: delete this test line
         for play in plays:
             temp = dict()
             temp["Event_Num"] = int(play[0].replace("\"","").strip())
@@ -69,7 +70,6 @@ class Game:
             temp["Person1"] = str(play[9].replace("\"","")).strip()
             temp["Person2"] = str(play[10].replace("\"","")).strip()
             temp["Person3"] = str(play[11].replace("\"","")).strip()
-            #print('Counter:', counter, play) TODO: delete this test line
             self.play.append(temp)
         #sort by Period (ascending), PC_Time (descending), WC_Time (ascending), Event_Num(ascending)
         self.play = sorted(self.play, key = itemgetter("Event_Num"))
@@ -80,10 +80,82 @@ class Game:
     #goes through each play and calculates defensive and offensive ratings of each player
     #TODO: implement function
     def ratings(self):
-        for play in self.play:
-            if play['Period'] != self.currentPeriod and play['Event_Msg_Type'] == 12 and play['Action_Type'] == 0:
-                self.currentPeriod = play['Period']
+        for i in range(len(self.play)):
+            if self.play[i]['Period'] != self.currentPeriod and self.play[i]['Event_Msg_Type'] == 12 and self.play[i]['Action_Type'] == 0:
+                self.currentPeriod = self.play[i]['Period']
                 #update lineup with new period
-            if play['Option3'] != 0:
-                print(play)
 
+            if i == len(self.play)-1:
+                end_of_possession(self.play[i])
+            else:
+                end_of_possession(self.play[i], self.play[i+1])
+
+    #TODO: implement helper function for substitutions
+
+
+#parses thru Game_Lineup.csv file and returns a dict (key = gameid, value = Game object)
+def parseGameLineup(filename):
+    game = dict()
+    filename = open(filename, encoding = "ISO-8859-1")
+    filename.readline()
+    gameId = ""
+    aGame = []
+    counter = 0
+    for line in filename:
+        line = line.replace("\"","").strip().split('\t')
+        if gameId == "":
+            gameId = line[0].strip()
+            aGame.append(line)
+        elif gameId != line[0].strip():
+            game[gameId] = Game(aGame)
+            gameId = line[0].strip()
+            aGame = [line]
+        else:
+            aGame.append(line)
+    game[gameId] = Game(aGame)
+    return game
+
+#END OF POSSESSION REQUIREMENTS
+'''
+    Can end either 6 diff ways:
+    1) Made Field Goal Attempt
+    2) Made Final Free Throw Attempt
+    3) Missed Final Free Throw Attempt that results in DEFENSIVE rebound
+    4) Missed Field Goal attempt that results in a DEFENSIVE rebound
+    5) Turnover
+    6) End of Time Period
+'''
+#TODO: test to make sure this is working correctly
+#returns a phrase of what the end of possession is or None (not an end of posssession)
+def end_of_possession(play, next_play=None):
+    event_msg_type = play['Event_Msg_Type']
+    action_type = play['Action_Type']
+    madeFieldGoalAttempt =  event_msg_type == 1 #made field goal attempt
+    turnover = event_msg_type == 5 #turnover
+    endOfTime = event_msg_type == 13  #end of time period
+    if madeFieldGoalAttempt:
+        return "Made Field Goal Attempt"
+    elif turnover:
+        return "Turnover"
+    elif endOfTime:
+        return "End of Time Period"
+    elif next_play is not None:
+        next_event_msg_type = next_play['Event_Msg_Type']
+        madeFinalFreeThrow = (event_msg_type == 3) and (
+                    action_type == 10 or action_type == 12 or action_type == 15 or action_type == 19 or
+                    action_type == 20 or action_type == 22 or action_type == 26 or action_type == 29) and \
+                             (
+                                         next_event_msg_type != 4)  # made final free throw attempt
+        missedFreeThrowRebound = (event_msg_type == 3) and (
+                    action_type == 10 or action_type == 12 or action_type == 15 or action_type == 19 or
+                    action_type == 20 or action_type == 22 or action_type == 26 or action_type == 29) and (
+                                             next_event_msg_type == 4)
+        missedFieldGoalRebound = (event_msg_type == 2) and (
+                    next_event_msg_type == 4)  # missed shot and defensive rebound
+        if madeFinalFreeThrow:
+            return "Made Final Free Throw"
+        elif missedFreeThrowRebound:
+            return "Missed Free Throw Defensive Rebound"
+        elif missedFieldGoalRebound:
+            return "Missed Field Goal Defensive Rebound"
+    return None

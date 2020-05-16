@@ -28,3 +28,15 @@ def searchEventCodes(eventCodes, eventMsg, actionType):
         else:
             continue
     return None
+
+#parse thru Event_Codes.csv file and returns a list of EventCodes objects
+def parseEventCodes(filename):
+    eventCodes = list()
+    filename = open(filename, encoding = "ISO-8859-1")
+    filename.readline()
+    for line in filename:
+        line = line.replace("\"","").strip().split("\t")
+        if len(line) < 4:
+            line.append("")
+        eventCodes.append(EventCodes(line))
+    return eventCodes

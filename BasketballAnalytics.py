@@ -1,7 +1,7 @@
-from parsers import parseEventCodes as parseEventCodes
-from parsers import parseGameLineup as parseGameLineup
-from parsers import parsePlayByPlay as parsePlayByPlay
-from EventCodes import searchEventCodes as searchEventCodes
+#TODO: phase out parsers file
+from EventCodes import searchEventCodes
+from Game import parseGameLineup
+#from Game import parsePlayByPlay
 import csv
 
 
@@ -12,16 +12,25 @@ import csv
 #Use # of possessions to see if user is actually active in that game???
 #       because you can rack up DNP-Coach's Decisions
 
-#END OF POSSESSION REQUIREMENTS
-'''
-    Can end either 6 diff ways:
-    1) Made Field Goal Attempt
-    2) Made Final Free Throw Attempt
-    3) Missed Final Free Throw Attempt that results in DEFENSIVE rebound
-    4) Missed Field Goal attempt that results in a DEFENSIVE rebound
-    5) Turnover
-    6) End of Time Period
-'''
+#parses Play_by_Play.csv file and updates the games dict
+def parsePlayByPlay(filename, games):
+    filename = open(filename, encoding = "ISO-8859-1")
+    filename.readline()
+    gameId = ""
+    aGame = []
+    for line in filename:
+        line = line.strip().split('\t')
+        if gameId == "":
+            gameId = line[0].replace("\"","").strip()
+            aGame.append(line[1:10] + line[11:14])
+        elif gameId != line[0].replace("\"","").strip():
+            games[gameId].populatePlays(aGame)
+            gameId = line[0].replace("\"","").strip()
+            aGame = [line[1:10] + line[11:14]]
+        else:
+            aGame.append(line[1:10] + line[11:14])
+    games[gameId].populatePlays(aGame)
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -29,6 +38,7 @@ import csv
 if __name__ == "__main__":
     ##testing area
         #testing EventCodes class object
+    '''
     eventCodes = parseEventCodes("Event_Codes.txt")
     event = searchEventCodes(eventCodes, 12,0)
     if event != None:
@@ -40,7 +50,7 @@ if __name__ == "__main__":
         print("could not find")
     print()
     print()
-
+    '''
         #testing Game, StartingLineup, Player, Rating class objects
     games = parseGameLineup("Game_Lineup.txt")
     parsePlayByPlay("Play_by_Play.txt", games)
@@ -51,8 +61,10 @@ if __name__ == "__main__":
     print(games["006728e4c10e957011e1f24878e6054a"].teams)
     print(len(games["006728e4c10e957011e1f24878e6054a"].players))
     curr_game = games["006728e4c10e957011e1f24878e6054a"]
-    curr_game.ratings()
-    players = curr_game.players
+    #curr_game.ratings()
+    #players = curr_game.players
+    #a = curr_game.helper()
+    #print(a)
     print(curr_game.players)
     #print(curr_game.players['0370a0d090da0d0edc6319f120187e0e'])
     '''
