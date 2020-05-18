@@ -1,4 +1,3 @@
-#TODO: phase out parsers file
 from EventCodes import searchEventCodes
 from Game import parseGameLineup
 #from Game import parsePlayByPlay

@@ -90,7 +90,11 @@ class Game:
             else:
                 end_of_possession(self.play[i], self.play[i+1])
 
-    #TODO: implement helper function for substitutions
+    #TODO: implement helper function for substitutions/figure out who the starters are for each period
+    #       was thinking of looking through play by play and find out the first 5 people substituted OUT
+    #       for each team would be the team's starters. Need to make sure that this is a valid assumption.
+    #       From there I would have the 10 people currently on the floor at all times and manage it through substitution.
+    #       It seems like Game Lineup doesn't really help that much at all in determining the starters.
 
 
 #parses thru Game_Lineup.csv file and returns a dict (key = gameid, value = Game object)
@@ -127,6 +131,9 @@ def parseGameLineup(filename):
 '''
 #TODO: test to make sure this is working correctly
 #returns a phrase of what the end of possession is or None (not an end of posssession)
+#maybe have it return tuple, (True/False, pt value to add?) [T/F is used to determine whether or not possession ended]
+#                           pt value to add then adds onto each player's (its own object) ptsScored/ptsAllowed properties
+#                           if True, add 1 to every player's possession property, else ignore
 def end_of_possession(play, next_play=None):
     event_msg_type = play['Event_Msg_Type']
     action_type = play['Action_Type']
