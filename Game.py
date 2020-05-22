@@ -4,6 +4,14 @@ from StartingLineup import StartingLineup
 from EventCodes import parseEventCodes
 from EventCodes import searchEventCodes
 
+#TODO: 1) implement ratings function
+#               want to go thru each play and determine if EOP (end of possession)
+#               from there, it would use +/- for pts scored/allowed for everyone in currentLineup
+#       2) implement a substition function that updates currentLineup property
+#               make sure we take into consideration free throws
+#       3) potentially implement free throw counter function
+
+
 #game is going to be a list of every game
 #   each game consists of [game_id, period, person_id, team_id, status]
 #plays is list of every play in a game (2D list)
@@ -13,45 +21,42 @@ from EventCodes import searchEventCodes
 Properties:
 1) gameId = the game id, str
 2) teams = teams playing in game, list
-3) startingLineup = starting lineup for all periods in the game, StartingLineup object
+3) startingLineups = starting lineup for all periods in the game, StartingLineup object
 4) players = all the players in the game, dict; key=playerId, value=Player object
 5) currentLineup = current lineup for both teams at the moment
+6) subLineup = lineup to be substituted in
 6) play = all the plays for the game, list of each play as a dict (sorted properly) 
 7) currentPeriod = tracks the current period of the game
 '''
 class Game:
     def __init__(self, game):
-        gameId = str(game[0][0]).strip()
-        self.gameId = gameId
-        self.teams = []
-        for item in game:
-            teamId = str(item[3]).strip()
-            if teamId not in self.teams:
-                self.teams.append(teamId)
-        self.startingLineup = StartingLineup(game)
-        self.players = self.populatePlayers()
-        self.currentLineup = self.populateLineup()
+        self.gameId = str(game[0][0]).strip()
+        self.teams = self.__populateTeams(game)
+        self.startingLineups = StartingLineup(game) #starting lineup for every period (need to fix players for period0)
+        self.players = self.__populatePlayers()
+        self.currentLineup = self.startingLineups.lineup[1] #initialize to starting lineup
+        self.subLineup = self.currentLineup
         self.play = None
         self.currentPeriod = 0
 
-    #populates players property
-    def populatePlayers(self):
-        players = dict()
-        for period in self.startingLineup.lineup:
-            for team in self.startingLineup.lineup[period]:
-                for status in self.startingLineup.lineup[period][team]:
-                    for player in self.startingLineup.lineup[period][team][status]:
-                        if player not in players:
-                            players[player] = Player(player, team)
-        return players
+    #populates teams property
+    def __populateTeams(self, game):
+        teams = []
+        for item in game:
+            teamId = str(item[3]).strip()
+            if teamId not in teams:
+                teams.append(teamId)
+        return teams
 
-    #returns the lineup in a game
-    #TODO: I don't think this works
-    def populateLineup(self):
-        lineup = dict()
-        for team in self.startingLineup.lineup[1]:
-            lineup[team] = self.startingLineup.lineup[1][team]["A"]
-        return lineup
+    #populates players property
+    def __populatePlayers(self):
+        players = dict()
+        for period in self.startingLineups.lineup:
+            for team in self.startingLineups.lineup[period]:
+                for player in self.startingLineups.lineup[period][team]:
+                    if player not in players:
+                        players[player] = Player(player, team)
+        return players
 
     #populates play property with all the plays in a game
     def populatePlays(self, plays):
@@ -90,11 +95,19 @@ class Game:
             else:
                 end_of_possession(self.play[i], self.play[i+1])
 
-    #TODO: implement helper function for substitutions/figure out who the starters are for each period
-    #       was thinking of looking through play by play and find out the first 5 people substituted OUT
-    #       for each team would be the team's starters. Need to make sure that this is a valid assumption.
-    #       From there I would have the 10 people currently on the floor at all times and manage it through substitution.
-    #       It seems like Game Lineup doesn't really help that much at all in determining the starters.
+    #TODO: substitutions helper function to swap players out (make sure to account for free throws)
+    #       have not yet accounted for free throws yet
+    def __substitution(self, play):
+        if play['Event_Msg_Type'] != 8: #making sure it is a substitution play
+            return
+        personIn = play['Person1']
+        personOut = play['Person2']
+        team = self.players[personIn].teamId
+        self.currentLineup[team].remove(personOut)
+        self.currentLineup[team].append(personIn)
+
+
+
 
 
 #parses thru Game_Lineup.csv file and returns a dict (key = gameid, value = Game object)
@@ -130,39 +143,37 @@ def parseGameLineup(filename):
     6) End of Time Period
 '''
 #TODO: test to make sure this is working correctly
-#returns a phrase of what the end of possession is or None (not an end of posssession)
-#maybe have it return tuple, (True/False, pt value to add?) [T/F is used to determine whether or not possession ended]
+#       and also have a function to deal with counting free throws
+#returns a tuple, (True/False, pt value to add) [T/F is used to determine whether or not possession ended]
 #                           pt value to add then adds onto each player's (its own object) ptsScored/ptsAllowed properties
 #                           if True, add 1 to every player's possession property, else ignore
 def end_of_possession(play, next_play=None):
     event_msg_type = play['Event_Msg_Type']
     action_type = play['Action_Type']
+    pt_value = play['Option1']
     madeFieldGoalAttempt =  event_msg_type == 1 #made field goal attempt
     turnover = event_msg_type == 5 #turnover
     endOfTime = event_msg_type == 13  #end of time period
+    madeFinalFreeThrow = (event_msg_type == 3) and (
+            action_type == 10 or action_type == 12 or action_type == 15 or action_type == 19 or
+            action_type == 20 or action_type == 22 or action_type == 26 or action_type == 29) and (play['Option1'] != 0)  # made final free throw attempt
     if madeFieldGoalAttempt:
-        return "Made Field Goal Attempt"
+        return True, pt_value    # field goal pt value
     elif turnover:
-        return "Turnover"
+        return True, 0                  # turnover doesn't result in any pts
     elif endOfTime:
-        return "End of Time Period"
+        return True, 0                  # end of a period doesn't result in any pts
+    elif madeFinalFreeThrow:
+        return True, pt_value
     elif next_play is not None:
         next_event_msg_type = next_play['Event_Msg_Type']
-        madeFinalFreeThrow = (event_msg_type == 3) and (
+        next_pt_value = next_play['Option1']
+        missedFreeThrowRebound = (event_msg_type == 3) and (next_pt_value == 0) and (
                     action_type == 10 or action_type == 12 or action_type == 15 or action_type == 19 or
-                    action_type == 20 or action_type == 22 or action_type == 26 or action_type == 29) and \
-                             (
-                                         next_event_msg_type != 4)  # made final free throw attempt
-        missedFreeThrowRebound = (event_msg_type == 3) and (
-                    action_type == 10 or action_type == 12 or action_type == 15 or action_type == 19 or
-                    action_type == 20 or action_type == 22 or action_type == 26 or action_type == 29) and (
-                                             next_event_msg_type == 4)
-        missedFieldGoalRebound = (event_msg_type == 2) and (
-                    next_event_msg_type == 4)  # missed shot and defensive rebound
-        if madeFinalFreeThrow:
-            return "Made Final Free Throw"
-        elif missedFreeThrowRebound:
-            return "Missed Free Throw Defensive Rebound"
+                    action_type == 20 or action_type == 22 or action_type == 26 or action_type == 29) and (next_event_msg_type == 4) # missed free throw that results in defensive rebound
+        missedFieldGoalRebound = (event_msg_type == 2) and (next_event_msg_type == 4)  # missed shot and defensive rebound
+        if missedFreeThrowRebound:
+            return True, 0              # missed free throw is 0 pts
         elif missedFieldGoalRebound:
-            return "Missed Field Goal Defensive Rebound"
-    return None
+            return True, 0              # missed field goal is 0 pts
+    return False, 0                     # not an end of possession

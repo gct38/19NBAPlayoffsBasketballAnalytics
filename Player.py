@@ -11,6 +11,7 @@ class Player:
     def __init__(self, playerId, teamId):
         self.playerId = str(playerId).strip()
         self.teamId = str(teamId).strip()
+        self.active = False
         self.defRtg = 0
         self.offRtg = 0
         self.possessions = 0
@@ -18,5 +19,19 @@ class Player:
         self.pointsScored = 0
 
     def calculateRtg(self):
-        self.offRtg = self.pointsScored/self.possessions
-        self.defRtg = self.pointsAllowed/self.possessions
+        if self.possessions == 0:
+            self.offRtg = 0
+            self.defRtg = 0
+        else:
+            self.offRtg = self.pointsScored/self.possessions
+            self.defRtg = self.pointsAllowed/self.possessions
+
+    # + operator overload to add for pts scored
+    def __add__(self, other):
+        self.pointsScored += other
+        self.possessions += 1
+
+    # - operator overload to add for pts allowed
+    def __sub__(self, other):
+        self.pointsAllowed += other
+        self.possessions += 1

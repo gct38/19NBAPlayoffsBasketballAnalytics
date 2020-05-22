@@ -1,6 +1,5 @@
 from EventCodes import searchEventCodes
 from Game import parseGameLineup
-#from Game import parsePlayByPlay
 import csv
 
 
@@ -60,11 +59,40 @@ if __name__ == "__main__":
     print(games["006728e4c10e957011e1f24878e6054a"].teams)
     print(len(games["006728e4c10e957011e1f24878e6054a"].players))
     curr_game = games["006728e4c10e957011e1f24878e6054a"]
+
+    '''
+    counter = 0
+    for game in games:
+        teams = dict()
+        for play in games[game].play:
+            if int(play['Event_Msg_Type']) == 8 and int(play['Period']) == 1:
+                player = play['Person1']
+                if games[game].players[player].teamId not in teams:
+                    teams[games[game].players[player].teamId] = 1
+                else:
+                    teams[games[game].players[player].teamId] += 1
+        for team in teams:
+            if teams[team] < 5:
+                print(games[game].gameId, team)
+                counter += 1
+
+    print(counter)
+
+
+    removes = []
+    for value in curr_game.play:
+        if int(value['Event_Msg_Type']) != 8:
+            removes.append(value)
+
+    for value in removes:
+        curr_game.play.remove(value)
+    '''
+
     #curr_game.ratings()
     #players = curr_game.players
     #a = curr_game.helper()
     #print(a)
-    print(curr_game.players)
+    #print(curr_game.players)
     #print(curr_game.players['0370a0d090da0d0edc6319f120187e0e'])
     '''
     counter = 0
