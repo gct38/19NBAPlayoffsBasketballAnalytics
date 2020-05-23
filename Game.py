@@ -85,19 +85,26 @@ class Game:
     #goes through each play and calculates defensive and offensive ratings of each player
     #TODO: implement function
     def ratings(self):
+        freeThrow = False
         for i in range(len(self.play)):
             if self.play[i]['Period'] != self.currentPeriod and self.play[i]['Event_Msg_Type'] == 12 and self.play[i]['Action_Type'] == 0:
                 self.currentPeriod = self.play[i]['Period']
                 #update lineup with new period
 
+            freeThrow = free_throw(self.play[i])
+            self.__substitution(self.play[i], freeThrow)
             if i == len(self.play)-1:
-                end_of_possession(self.play[i])
+                eop, pts = end_of_possession(self.play[i])
             else:
-                end_of_possession(self.play[i], self.play[i+1])
+                eop, pts = end_of_possession(self.play[i], self.play[i+1])
+
+
+
 
     #TODO: substitutions helper function to swap players out (make sure to account for free throws)
     #       have not yet accounted for free throws yet
-    def __substitution(self, play):
+    #helper function to substitute players
+    def __substitution(self, play, freeThrow):
         if play['Event_Msg_Type'] != 8: #making sure it is a substitution play
             return
         personIn = play['Person1']
@@ -177,3 +184,12 @@ def end_of_possession(play, next_play=None):
         elif missedFieldGoalRebound:
             return True, 0              # missed field goal is 0 pts
     return False, 0                     # not an end of possession
+
+
+#helper function to determine if it's a free throw (used for substitution/scoring purposes)
+def free_throw(play):
+    freeThrow = play['Event_Msg_Type'] == 3
+    last_freeThrow = (play['Action_Type'] == 10) or (play['Action_Type'] == 12) or (play['Action_Type'] == 15) or (play['Action_Type'] == 16) or \
+                     (play['Action_Type'] == 17) or (play['Action_Type'] == 19) or (play['Action_Type'] == 20) or (play['Action_Type'] == 22) or \
+                     (play['Action_Type'] == 26) or (play['Action_Type'] == 29)
+    return freeThrow and not last_freeThrow
