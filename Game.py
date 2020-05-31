@@ -7,7 +7,7 @@ from EventCodes import searchEventCodes
 #TODO: 1) implement ratings function
 #               want to go thru each play and determine if EOP (end of possession)
 #               from there, it would use +/- for pts scored/allowed for everyone in currentLineup
-#       2) implement a substition function that updates currentLineup property
+#       2) implement a substitution function that updates currentLineup property
 #               make sure we take into consideration free throws
 #       3) potentially implement free throw counter function
 
@@ -103,6 +103,7 @@ class Game:
 
     #TODO: substitutions helper function to swap players out (make sure to account for free throws)
     #       have not yet accounted for free throws yet
+    # if freeThrow is True, then need to reset/utilize self.subLineup (how will I know when to reset it?)
     #helper function to substitute players
     def __substitution(self, play, freeThrow):
         if play['Event_Msg_Type'] != 8: #making sure it is a substitution play
@@ -186,7 +187,8 @@ def end_of_possession(play, next_play=None):
     return False, 0                     # not an end of possession
 
 
-#helper function to determine if it's a free throw (used for substitution/scoring purposes)
+#helper function to determine if it's a free throw sequence (used for substitution/scoring purposes)
+#returns True if current play is a free throw, but not the last free throw
 def free_throw(play):
     freeThrow = play['Event_Msg_Type'] == 3
     last_freeThrow = (play['Action_Type'] == 10) or (play['Action_Type'] == 12) or (play['Action_Type'] == 15) or (play['Action_Type'] == 16) or \
