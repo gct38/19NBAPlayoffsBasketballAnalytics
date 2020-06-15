@@ -89,10 +89,10 @@ class Game:
         for i in range(len(self.play)):
             if self.play[i]['Period'] != self.currentPeriod and self.play[i]['Event_Msg_Type'] == 12 and self.play[i]['Action_Type'] == 0:
                 self.currentPeriod = self.play[i]['Period']
-                #update lineup with new period
+                self.currentLineup = self.startingLineups.lineup[2] #update lineup with new period
 
             freeThrow = free_throw(self.play[i])
-            self.__substitution(self.play[i], freeThrow)
+            self.__substitution(self.play[i], freeThrow, eop)
             if i == len(self.play)-1:
                 eop, pts = end_of_possession(self.play[i])
             else:
@@ -104,8 +104,10 @@ class Game:
     #TODO: substitutions helper function to swap players out (make sure to account for free throws)
     #       have not yet accounted for free throws yet
     # if freeThrow is True, then need to reset/utilize self.subLineup (how will I know when to reset it?)
+    #freeThrow (bool) flag of whether or not currently in free throw sequence
+    #resetLineup (bool) flag of whether or not need to reset lineup (defaults to False)
     #helper function to substitute players
-    def __substitution(self, play, freeThrow):
+    def __substitution(self, play, freeThrow, resetLineup=False):
         if play['Event_Msg_Type'] != 8: #making sure it is a substitution play
             return
         personIn = play['Person1']

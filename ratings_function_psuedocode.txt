@@ -1,0 +1,36 @@
+def ratings:
+    loop thru every play:
+        - update current period/lineup
+        - see if in middle of free throw sequence (free_throw function)
+            note: might have to change this to indicate if the free throw sequence has STARTED
+                    then when (end_of_possession function) evaluates to TRUE, then it indicates that the free throw sequence has ended
+                    which we will then use to set our subLineup = currentLineup
+        - (substition function) elaborated upon below...
+            - substitute players in and out
+            - accounts for the substitutions during free throws
+        - check (end_of_possession function)
+            - T/F flag to see if it's the end of a possession
+            - pt value to be added/subtracted
+        - go thru each player and add/sub pts for their plus/minus
+            - potentially make this a function?
+            note: always add/sub pts for plus/minus of players for currentLineup property ONLY
+            note: add/sub action to be done here outside of substitution function
+
+
+NOTE: potentially have 2 flags start/end of free throw sequence
+      reset start and end flags when end flag gets set to True
+input: play, whether or not in middle of free throw sequence
+output: none, it will substitute players
+def substition:
+    - make sure it's a substition play
+
+    Decision Tree:
+    - not free throw sequence
+        - substitute players into currentLineup
+    - start of free throw sequence
+        - set subLineup = currentLineup
+        - substitute players into subLineup
+    - end of free throw sequence
+        - substitute players into subLineup
+        - set currentLineup = subLineup
+
