@@ -1,6 +1,7 @@
 from EventCodes import searchEventCodes
 from Game import parseGameLineup
 
+import Player
 #TODO: fact check make sure output data is correct
 # cross list with potentially..? https://www.basketball-reference.com/playoffs/NBA_2018_per_poss.html
 
@@ -45,14 +46,50 @@ def output(games):
 #TODO: implement test scripts
 #gets each player's total off/def ratings for the whole playoffs to help verify output data
 def playoff_totals(games):
-    pass
+    allPlayers = dict()
+    for game in games:
+        games[game].ratings()
+        for player in games[game].players:
+            if games[game].players[player].possessions != 0:
+                if games[game].players[player].playerId not in allPlayers:
+                    allPlayers[games[game].players[player].playerId] = Player.Player(games[game].players[player].playerId, games[game].players[player].teamId)
+                    allPlayers[games[game].players[player].playerId].possessions = games[game].players[player].possessions
+                    allPlayers[games[game].players[player].playerId].pointsAllowed = games[game].players[player].pointsAllowed
+                    allPlayers[games[game].players[player].playerId].pointsScored = games[game].players[player].pointsScored
+                else:
+                    allPlayers[games[game].players[player].playerId].possessions += games[game].players[player].possessions
+                    allPlayers[games[game].players[player].playerId].pointsAllowed += games[game].players[player].pointsAllowed
+                    allPlayers[games[game].players[player].playerId].pointsScored += games[game].players[player].pointsScored
+
+    file = open('TEST_Total_Off_Def_Ratings_2018_Playoffs.csv', 'w')
+    file.write("Player_ID, OffRtg, DefRtg\n")
+    for player in allPlayers:
+        allPlayers[player].calculateRtg()
+        file.write(allPlayers[player].playerId + ',' + str(allPlayers[player].offRtg) + ',' + str(allPlayers[player].defRtg) + '\n')
+    file.close()
+
+
 
 #gets pt totals for all games to help verify output data
 def game_scores(games):
-    pass
+    file = open('TEST_Game_Scores_2018_Playoffs.csv', 'w')
+    file.write("Game_ID, Team1, Team1Pts, Team2, Team2Pts\n")
+    for game in games:
+        team1 = games[game].teams[0]
+        team1pts = 0
+        team2 = games[game].teams[1]
+        team2pts = 0
+        for player in games[game].players:
+            if games[game].players[player].teamId == team1 and games[game].players[player].possessions != 0:
+                team1pts += games[game].players[player].pointsScored
+                team2pts += games[game].players[player].pointsAllowed
+        file.write(game + ',' + team1 + ',' + str(team1pts/5) + ',' + team2 + ',' + str(team2pts/5) + '\n')
+    file.close()
+
 
 def test_scripts(games):
-    pass
+    playoff_totals(games)
+    game_scores(games)
 
 
 
@@ -81,6 +118,8 @@ if __name__ == "__main__":
     parsePlayByPlay("Play_by_Play.txt", games)
 
     output(games)
+    test_scripts(games)
+    print('done')
 
 
     '''
