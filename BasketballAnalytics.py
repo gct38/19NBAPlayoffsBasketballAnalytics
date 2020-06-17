@@ -1,7 +1,8 @@
 from EventCodes import searchEventCodes
 from Game import parseGameLineup
-import csv
 
+#TODO: fact check make sure output data is correct
+# cross list with potentially..? https://www.basketball-reference.com/playoffs/NBA_2018_per_poss.html
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -29,6 +30,32 @@ def parsePlayByPlay(filename, games):
             aGame.append(line[1:10] + line[11:14])
     games[gameId].populatePlays(aGame)
 
+
+def output(games):
+    file = open('Off_Def_Ratings_2018_Playoffs.csv', 'w')
+    file.write("Game_ID, Player_ID, OffRtg, DefRtg\n")
+    for game in games:
+        games[game].ratings()
+        for player in games[game].players:
+            if games[game].players[player].possessions != 0:
+                file.write(game + ',' + games[game].players[player].playerId + ',' + games[game].players[player].offRtg + ',' + games[game].players[player].defRtg + '\n')
+    file.close()
+    print("move complete")
+
+#TODO: implement test scripts
+#gets each player's total off/def ratings for the whole playoffs to help verify output data
+def playoff_totals(games):
+    pass
+
+#gets pt totals for all games to help verify output data
+def game_scores(games):
+    pass
+
+def test_scripts(games):
+    pass
+
+
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -53,6 +80,10 @@ if __name__ == "__main__":
     games = parseGameLineup("Game_Lineup.txt")
     parsePlayByPlay("Play_by_Play.txt", games)
 
+    output(games)
+
+
+    '''
     #TODO: Game.players property; what is Option3?
     print(len(games))
     print(games["006728e4c10e957011e1f24878e6054a"].gameId)
@@ -60,7 +91,7 @@ if __name__ == "__main__":
     print(len(games["006728e4c10e957011e1f24878e6054a"].players))
     curr_game = games["006728e4c10e957011e1f24878e6054a"]
 
-    '''
+    
     counter = 0
     for game in games:
         teams = dict()

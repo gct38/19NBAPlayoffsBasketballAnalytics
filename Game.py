@@ -4,13 +4,8 @@ from StartingLineup import StartingLineup
 from EventCodes import parseEventCodes
 from EventCodes import searchEventCodes
 
-#TODO: 1) implement ratings function
-#               want to go thru each play and determine if EOP (end of possession)
-#               from there, it would use +/- for pts scored/allowed for everyone in currentLineup
-#       2) implement a substitution function that updates currentLineup property
-#               make sure we take into consideration free throws
-#       3) potentially implement free throw counter function
 
+#TODO: get rid of all test code/print statements
 
 #game is going to be a list of every game
 #   each game consists of [game_id, period, person_id, team_id, status]
@@ -83,41 +78,88 @@ class Game:
         self.play = sorted(self.play, key = itemgetter("Period"))
 
     #goes through each play and calculates defensive and offensive ratings of each player
-    #TODO: implement function
+    #TODO: testing function
     def ratings(self):
         freeThrow = False
+        startfreeThrow = False
         for i in range(len(self.play)):
+            #updating currentLineup and period
             if self.play[i]['Period'] != self.currentPeriod and self.play[i]['Event_Msg_Type'] == 12 and self.play[i]['Action_Type'] == 0:
+                #print('NEW LINEUP Period:', self.currentPeriod, "new period:", self.currentPeriod + 1)
+                #print('old lineup:', self.currentLineup)
                 self.currentPeriod = self.play[i]['Period']
-                self.currentLineup = self.startingLineups.lineup[2] #update lineup with new period
+                self.currentLineup = self.startingLineups.lineup[self.currentPeriod] #update lineup with new period
+                #print('new lineup:', self.currentLineup)
+                #print()
 
-            freeThrow = free_throw(self.play[i])
-            self.__substitution(self.play[i], freeThrow, eop)
+            #check to see if end of possession
             if i == len(self.play)-1:
                 eop, pts = end_of_possession(self.play[i])
             else:
                 eop, pts = end_of_possession(self.play[i], self.play[i+1])
 
+            #checking if in free throw sequence
+            if freeThrow:
+                if eop:        #if free throw sequence finished, then reset freeThrow bool to False
+                    freeThrow = False
+            else:               #if not in free throw sequence, check to see if it is now
+                freeThrow = free_throw(self.play[i])        #bool of whether or not in middle of free throw sequence
+                if freeThrow:   #only set this True whenever freeThrow goes from False to True
+                    startfreeThrow = True
+
+            self.__substitution(self.play[i], freeThrow, eop, startfreeThrow)   #substitute players
+            startfreeThrow = False #when do I reset this bool back to False?
+
+            if pts != 0:
+                self.__rpm(self.players[self.play[i]['Person1']].teamId, pts)      #adding to players off/def ratings
+
+        self.__calculate_ratings()      #used to calculate every player's off/def rating per 100 possessions in the game
 
 
 
-    #TODO: substitutions helper function to swap players out (make sure to account for free throws)
-    #       have not yet accounted for free throws yet
-    # if freeThrow is True, then need to reset/utilize self.subLineup (how will I know when to reset it?)
-    #freeThrow (bool) flag of whether or not currently in free throw sequence
-    #resetLineup (bool) flag of whether or not need to reset lineup (defaults to False)
+
+
+    #TODO: test that substitutions helper function to swap players out (make sure to account for free throws)
     #helper function to substitute players
-    def __substitution(self, play, freeThrow, resetLineup=False):
-        if play['Event_Msg_Type'] != 8: #making sure it is a substitution play
+    def __substitution(self, play, freeThrow, eop, start):
+        if play['Event_Msg_Type'] != 8 or play['Event_Msg_Type'] != 3: #making sure it is a substitution play
             return
-        personIn = play['Person1']
-        personOut = play['Person2']
+        personOut = play['Person1']
+        personIn = play['Person2']
         team = self.players[personIn].teamId
-        self.currentLineup[team].remove(personOut)
-        self.currentLineup[team].append(personIn)
+        #print("person in:", personIn, "person Out:", personOut, "team:", team, "play:", play)
+        #print('bools', freeThrow, eop, start, 'play', play)
+        #print('prev sublineup',self.subLineup)
+
+        #substitution sequences
+        if not freeThrow:                                       #not a free throw sequence
+            self.currentLineup[team].remove(personOut)
+            self.currentLineup[team].append(personIn)
+        elif freeThrow and start:                               #start of free throw
+            self.subLineup = self.currentLineup
+            #print('after sublineup', self.subLineup)
+        elif freeThrow and not start:                           #middle of free throw
+            self.subLineup[team].remove(personOut)
+            self.subLineup[team].append(personIn)
+        elif eop:                                               #end of free throw sequence
+            #eop means end of possession which signifies that it ended the free throw sequence
+            self.currentLineup = self.subLineup
 
 
 
+    #will add to off/def rating of the individual player if they're in the currentLineup
+    def __rpm(self, addTeam, pts):
+        for team in self.currentLineup:
+            for playerId in self.currentLineup[team]:
+                if team == addTeam:
+                    self.players[playerId] + pts
+                else:
+                    self.players[playerId] - pts
+
+    #helper function to calculate everyone's off/def rating per 100 possessions
+    def __calculate_ratings(self):
+        for player in self.players:
+            self.players[player].calculateRtg()
 
 
 #parses thru Game_Lineup.csv file and returns a dict (key = gameid, value = Game object)
@@ -153,7 +195,6 @@ def parseGameLineup(filename):
     6) End of Time Period
 '''
 #TODO: test to make sure this is working correctly
-#       and also have a function to deal with counting free throws
 #returns a tuple, (True/False, pt value to add) [T/F is used to determine whether or not possession ended]
 #                           pt value to add then adds onto each player's (its own object) ptsScored/ptsAllowed properties
 #                           if True, add 1 to every player's possession property, else ignore
